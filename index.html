@@ -964,12 +964,29 @@ function pattern(type){
  return out+'</div><div class="pattern-caption">'+(cannon?'3九 → 9一・7一・8二・9三・7三':t.rays?'矢印型：途中の駒を越えない':'マス指定型：途中の駒を越えられる')+'</div>';
 }
 function cpuLevelLabel(){return difficulty==='practice'?E.practiceLevelName:E.difficultyNames[difficulty];}
+let formationNodes=null,formationChoiceKey='';
+function selectFormationSlot(i){
+ if(footSwap&&E.slots[i].group==='foot'&&formation[i]===footSwap.type){formation=E.swapFoot(formation,footSwap.from,i);slotIndex=footSwap.from;footSwap=null;}else{slotIndex=i;footSwap=null;}
+ formationRender();
+}
+function ensureFormationBoard(){
+ if(formationNodes?.board===$('#formationBoard'))return;
+ const board=$('#formationBoard'),slots=[];board.replaceChildren();
+ for(let y=6;y<=8;y++)for(let x=0;x<9;x++){
+  const i=E.slots.findIndex(s=>s.x===x&&s.y===y);
+  if(i<0){const empty=document.createElement('span');empty.className='empty';board.appendChild(empty);continue;}
+  const b=document.createElement('button');b.type='button';b.onclick=()=>selectFormationSlot(i);slots[i]=b;board.appendChild(b);
+ }
+ formationNodes={board,slots};
+}
 function formationRender(){
  $('#formationDifficulty').textContent=online?'人との対戦':'CPU：'+cpuLevelLabel();
- const board=$('#formationBoard');board.innerHTML='';
- for(let y=6;y<=8;y++)for(let x=0;x<9;x++){const i=E.slots.findIndex(s=>s.x===x&&s.y===y);if(i<0){board.insertAdjacentHTML('beforeend','<span class="empty"></span>');continue;}const b=document.createElement('button');b.className='slot'+(i===slotIndex?' active':'')+(footSwap&&formation[i]===footSwap.type?' swap-target':'');b.innerHTML=token(formation[i]);b.setAttribute('aria-label',`${coord(x,y)} ${E.T[formation[i]].name}を編成`);b.onclick=()=>{if(footSwap&&E.slots[i].group==='foot'&&formation[i]===footSwap.type){formation=E.swapFoot(formation,footSwap.from,i);slotIndex=footSwap.from;footSwap=null;}else{slotIndex=i;footSwap=null;}formationRender();};board.appendChild(b);}
+ ensureFormationBoard();
+ for(const [i,b] of formationNodes.slots.entries())if(b){const type=formation[i],label=`${coord(E.slots[i].x,E.slots[i].y)} ${E.T[type].name}を編成`;b.className='slot'+(i===slotIndex?' active':'')+(footSwap&&type===footSwap.type?' swap-target':'');if(b.dataset.type!==type){b.innerHTML=token(type);b.dataset.type=type;}if(b.getAttribute('aria-label')!==label)b.setAttribute('aria-label',label);}
  const slot=E.slots[slotIndex],type=formation[slotIndex],t=E.T[type];$('#slotLabel').textContent=`${coord(slot.x,slot.y)} · ${groupName[slot.group]}`;$('#typeName').textContent=t.name;$('#typeNote').textContent=slot.group==='general'?'周囲8マスに移動・攻撃。':slot.group==='merc'?'大筒は正式初期位置の3九で選択できます。':slot.group==='foot'?'弓1枚・槍4枚・刀4枚。タイプを選び、入れ替え先の足軽をタップしてください。':slot.group==='lord'?'抽選で決まった殿です。直前の自分の手で離れたマスへのUターンは禁止。':'上が前方向です。赤＝移動・攻撃、青＝移動のみ、黄＝攻撃のみ。';$('#selectedPattern').innerHTML=pattern(type);
- $('#choices').innerHTML=(slot.group==='lord'&&drawnLords?[drawnLords[0]]:E.available(slot)).map(k=>`<button class="choice ${k===type?'active':''}" data-type="${k}" aria-pressed="${k===type}">${token(k)}<span>${E.T[k].name}</span></button>`).join('');$('#choices').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(slot.group==='foot'){footSwap=b.dataset.type===type?null:{from:slotIndex,type:b.dataset.type};}else{formation[slotIndex]=b.dataset.type;}formationRender();});
+ const options=slot.group==='lord'&&drawnLords?[drawnLords[0]]:E.available(slot),choiceKey=slot.group+':'+options.join(',');
+ if(formationChoiceKey!==choiceKey){$('#choices').innerHTML=options.map(k=>`<button class="choice" data-type="${k}">${token(k)}<span>${E.T[k].name}</span></button>`).join('');$('#choices').querySelectorAll('button').forEach(b=>b.onclick=()=>{const currentSlot=E.slots[slotIndex],currentType=formation[slotIndex];if(currentSlot.group==='foot'){footSwap=b.dataset.type===currentType?null:{from:slotIndex,type:b.dataset.type};}else{formation[slotIndex]=b.dataset.type;}formationRender();});formationChoiceKey=choiceKey;}
+ $('#choices').querySelectorAll('button').forEach(b=>{const active=b.dataset.type===type;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
  $('#bulk').innerHTML=footSwap?`<p class="swap-message" role="status">入れ替える「${E.T[footSwap.type].name}」の枠をタップしてください。</p><button id="cancelSwap">入れ替えをやめる</button>`:'';
  if(footSwap)$('#cancelSwap').onclick=()=>{footSwap=null;formationRender();};
  $('#formationCount').textContent='足軽：弓 '+formation.filter(k=>k==='foot3').length+' / 1 ・ 槍 '+formation.filter(k=>k==='foot1').length+' / 4 ・ 刀 '+formation.filter(k=>k==='foot2').length+' / 4';
