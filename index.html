@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#171c1c">
 <title>Build戦棋（ビルド戦棋）-SENGOKU- | ビルセン</title>
 <meta name="description" content="Build戦棋（ビルド戦棋）-SENGOKU-は、9×9の盤上で自分だけの部隊を編成して戦う対戦型戦略ボードゲームです。通称ビルセン。">
@@ -54,6 +54,11 @@ body.in-battle{height:100dvh;overflow:hidden;overscroll-behavior:none}
 #oppArmy{border-left-color:#b44e3b;background:linear-gradient(90deg,#642e2355,transparent);color:#f1b5a3}#myArmy{border-left-color:#669b67;background:linear-gradient(90deg,#31503655,transparent);color:#c3e0b4}
 
 .difficulty-options{grid-template-columns:1fr}.difficulty-options label{justify-content:flex-start;padding:0 14px;min-height:44px}
+/* Keep choice descriptions from changing the home screen's overall layout. */
+#home #difficultyDescription{height:3.9em;min-height:3.9em;overflow:hidden;line-height:1.3}
+/* Normal UI must not trigger browser zoom.  Board and formation retain their
+   dedicated Pointer Event pinch controls through touch-action:none below. */
+html,body{touch-action:manipulation}#boardStage,#formationViewport{touch-action:none}
 /* Non-battle screens fit the available phone viewport. */
 @media(max-width:960px){
  body:not(.in-battle){height:100dvh;overflow:hidden;overscroll-behavior:none}
